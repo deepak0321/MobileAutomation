@@ -1,26 +1,31 @@
 import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 
 public class EaseMyTripDemo {
-    public static void main(String[] args) {
-        DesiredCapabilities capabilities = new DesiredCapabilities();
-        capabilities.setCapability("automationName","UiAutomator2");
-        capabilities.setCapability("platformName","Android");
-        capabilities.setCapability("deviceName","10BDBK0NL3000H8");
-        capabilities.setCapability("appium:app","C:\\Users\\ADMIN\\Downloads\\MobileAutomationAPKs-master\\MobileAutomationAPKs-master\\EaseMyTrip.apk");
-        capabilities.setCapability("appPackage","com.easemytrip.android");
-        capabilities.setCapability("appActivity","com.easemytrip.android.SplashScreenActivity");
+    static AppiumDriver driver;
 
-        AppiumDriver driver = new AppiumDriver(capabilities);
+    public static void main(String[] args) throws InterruptedException {
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("automationName", "UiAutomator2");
+        capabilities.setCapability("platformName", "Android");
+        capabilities.setCapability("deviceName", "10BDBK0NL3000H8");
+        capabilities.setCapability("appium:app", "C:\\Users\\ADMIN\\Downloads\\MobileAutomationAPKs-master\\MobileAutomationAPKs-master\\EaseMyTrip.apk");
+        capabilities.setCapability("appPackage", "com.easemytrip.android");
+        capabilities.setCapability("appActivity", "com.easemytrip.android.SplashScreenActivity");
+
+        driver = new AppiumDriver(capabilities);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
-        WebDriverWait wait = new WebDriverWait(driver,Duration.ofSeconds(30));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
         WebElement dontAllowButton = driver.findElement(By.id("com.android.permissioncontroller:id/permission_deny_button"));
         dontAllowButton.click();
@@ -49,9 +54,17 @@ public class EaseMyTripDemo {
         WebElement departureDate = driver.findElement(By.xpath("//android.widget.TextView[@resource-id=\"com.easemytrip.android:id/search_flight_departure_date\"]"));
         departureDate.click();
 
-        WebElement selectDate = driver.findElement(By.xpath("(//androidx.recyclerview.widget.RecyclerView[@resource-id=\"com.easemytrip.android:id/rvDateGrid\"])[2]/android.widget.RelativeLayout[10]/android.widget.RelativeLayout"));
-        WebElement date = wait.until(ExpectedConditions.elementToBeClickable(selectDate));
-        date.click();
+        int retry = 0;
+        do {
+            try {
+                WebElement selectDate = driver.findElement(By.xpath("//android.widget.TextView[@content-desc=\"Date is 04 Feb 2025\"]"));
+                selectDate.click();
+                break;
+            } catch (StaleElementReferenceException e) {
+                    retry++;
+            }
+        }while(retry<=2);
+
 
         WebElement travellers = driver.findElement(By.id("com.easemytrip.android:id/textViewPaxCount"));
         travellers.click();
@@ -77,37 +90,31 @@ public class EaseMyTripDemo {
         List<WebElement> flightDurations = driver.findElements(By.xpath("//android.widget.TextView[@resource-id=\"com.easemytrip.android:id/tv_travelling_duration\"]"));
         List<WebElement> flightPrices = driver.findElements(By.xpath("//android.widget.TextView[@resource-id=\"com.easemytrip.android:id/tv_flight_rate_discounted\"]"));
 
-        for(int numberOfFlights = 1;numberOfFlights<=2;numberOfFlights++){
+        for (int numberOfFlights = 1; numberOfFlights <= 2; numberOfFlights++) {
 
 
-            System.out.println(     flightNames.get(numberOfFlights).getText()           +" | "+
-                                    flightDepartureTimings.get(numberOfFlights).getText()+" - "+
-                                    flightArrivalTimings.get(numberOfFlights).getText()  +" | "+
-                                    flightDurations.get(numberOfFlights).getText()       +" | "+
-                                    flightPrices.get(numberOfFlights).getText()
-                    );
+            System.out.println(flightNames.get(numberOfFlights).getText() + " | " +
+                    flightDepartureTimings.get(numberOfFlights).getText() + " - " +
+                    flightArrivalTimings.get(numberOfFlights).getText() + " | " +
+                    flightDurations.get(numberOfFlights).getText() + " | " +
+                    flightPrices.get(numberOfFlights).getText()
+            );
         }
 
+    }
 
+    public static void scroll(int startX, int startY, int endX, int endY) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "Finger");
 
+        Sequence sequence = new Sequence(finger, 1)
+                .addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), startX, startY))
+                .addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()))
+                .addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), endX, endY))
+                .addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        driver.perform(Collections.singletonList(sequence));
 
     }
+
+
 }
